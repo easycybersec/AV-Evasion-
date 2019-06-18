@@ -1,0 +1,6 @@
+AMSI EVASION BY CUSTOM SCRIPTING REVERSE SHELLS 
+
+AMSI - Anti Malware Scanning Interface is an attempt by Microsoft to overcome the advantage held by interpreted scripts. These do not write to disk like .exe's and are executed in memory. 
+Traditional AV's scan the files in disk for malicious signature. I simplest way to evade AMSI is to write your own scripts. 
+
+TO be continued ...
